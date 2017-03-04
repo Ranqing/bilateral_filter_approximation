@@ -119,10 +119,6 @@ void qing_stereo::compute_mcost_vol_r(){
 # endif
 }
 
-//void qing_stereo::appximated_bilateral_filter(float *out, float *in) {
-
-//}
-
 
 void qing_stereo::aggregate_mcost_vol() {
 
@@ -132,16 +128,46 @@ void qing_stereo::aggregate_mcost_vol() {
     for(int d = 0; d < m_disp_range; ++d) {
         float * mcost = m_mcost_l + d * m_image_size;
         float * temp = new float[m_image_size];
+
         memcpy(temp, mcost, sizeof(float)*m_image_size);
         memset(mcost, 0, sizeof(float)*m_image_size);
         QingTimer timer;
-        qing_appximated_bilateral_filter(mcost, temp, m_bgr_l, m_w, m_h, m_sigma_range, m_sigma_spatial);
+        qing_approximated_bilateral_filter(mcost, temp, m_bgr_l, m_w, m_h, m_sigma_range, m_sigma_spatial);
+        //qing_bilateral_filter(mcost, temp, m_bgr_l, m_w, m_h, m_sigma_range, m_sigma_spatial);
+
         cout << "d = " << d << ", duration = " << timer.duration()*1000 << " ms" << endl;
-# if 1
+# if 0
+        qing_create_dir("matching-cost");
         string out_jpg_file = "./matching-cost/filtered_mcost_l_" + qing_int_2_string(d) + ".jpg";
         qing_save_mcost_jpg(out_jpg_file, mcost, m_w, m_h);
 # endif
     }
+}
 
+void qing_stereo::mcost_to_disp(const int scale) {
+    m_disp_l = new unsigned char[m_image_size];
+    memset(m_disp_l, 0, sizeof(unsigned char)*m_image_size);
+    for(int y = 0, idx = 0; y < m_h; ++y) {
+        for(int x = 0; x < m_w; ++x) {
 
+            float min_mcost = 65536;
+            int min_d = 0;
+
+            for(int d = 1; d < m_disp_range; ++d) {
+                float mcost = *(m_mcost_l + d * m_image_size + idx);
+                if(mcost < min_mcost) {
+                    min_mcost = mcost;
+                    min_d = d * scale;
+                }
+            }
+            m_disp_l[idx] = min_d;
+            idx++;
+        }
+    }
+
+# if 1
+    Mat left_disp(m_h, m_w, CV_8UC1);
+    memcpy(left_disp.data, m_disp_l, sizeof(unsigned char)*m_image_size);
+    imwrite("./left.png", left_disp);
+# endif
 }

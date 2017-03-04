@@ -16,6 +16,7 @@ int main(int argc, char * argv[]) {
 
     stereo.compute_mcost_vol_l();
     stereo.aggregate_mcost_vol();
+    stereo.mcost_to_disp(255/d);
 //    stereo.compute_mcost_vol_r();
 
 //    cv:: SiftFeatureDetector sift_features ;

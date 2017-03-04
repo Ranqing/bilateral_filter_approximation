@@ -19,14 +19,16 @@ public:
     float * m_filtered_mcost_l, * m_filtered_mcost_r;
     float * m_range_table, * m_spatial_table;
     double m_sigma_range, m_sigma_spatial;
+    unsigned char * m_disp_l, * m_disp_r;
 
     void set_params(const int disp_range, const float sigma_range, const float sigma_spatial);
     void load_image(const string filename_l, const string filename_r);
     void compute_mcost_vol_l();
     void compute_mcost_vol_r();
     void aggregate_mcost_vol();
+    void mcost_to_disp(const int scale);
 
-    void appximated_bilateral_filter(float * out, float * in);
+    //void appximated_bilateral_filter(float * out, float * in);
 
     float * get_mcost_vol_l() { return m_mcost_l; }
     float * get_mcost_vol_r() { return m_mcost_r; }
