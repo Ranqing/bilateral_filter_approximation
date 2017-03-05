@@ -3,8 +3,8 @@
 
 int main(int argc, char * argv[]) {
 
-    const string imagename_l = "../input/teddy_L.png";
-    const string imagename_r = "../input/teddy_R.png";
+    const string imagename_l = "../input/half_wood1_L.png";
+    const string imagename_r = "../input/half_wood1_R.png";
 
     int d = 70;
     float sigma_range = 0.08;
@@ -16,6 +16,7 @@ int main(int argc, char * argv[]) {
 
     stereo.compute_mcost_vol_l();
     stereo.aggregate_mcost_vol();
+//    stereo.directional_aggregate_mcost_vol();
     stereo.mcost_to_disp(255/d);
 //    stereo.compute_mcost_vol_r();
 

@@ -61,11 +61,10 @@ void qing_stereo::set_params(const int disp_range, const float sigma_range, cons
     m_disp_range = disp_range;
     m_sigma_range = sigma_range * QING_FILTER_INTENSITY_RANGE;
     m_sigma_spatial = sigma_spatial * min(m_w, m_h);
-    //    cout << "sigma_range = " << m_sigma_range << endl;
-    //    cout << "sigma_spatial = " << m_sigma_spatial << endl;
+    cout << "sigma_range = " << m_sigma_range <<  "\t sigma_spatial = " << m_sigma_spatial << endl;
 
-    //    m_range_table = qing_get_range_weighted_table(m_sigma_range, QING_FILTER_INTENSITY_RANGE);
-    //    m_spatial_table = qing_get_spatial_weighted_table(m_sigma_spatial, 2*(int)(m_sigma_spatial+0.5f)+1);
+    m_range_table = qing_get_range_weighted_table(m_sigma_range, QING_FILTER_INTENSITY_RANGE);
+    m_spatial_table = qing_get_spatial_weighted_table(m_sigma_spatial, 2*(int)(m_sigma_spatial+0.5f)+1);
     cout << QING_DEBUG_FLAG_STRING << endl;
 }
 
@@ -122,9 +121,6 @@ void qing_stereo::compute_mcost_vol_r(){
 
 void qing_stereo::aggregate_mcost_vol() {
 
-    //    m_filtered_mcost_l = new float[m_image_size * m_disp_range];
-    //    memset(m_filtered_mcost_l, 0, sizeof(m_filtered_mcost_l));
-
     for(int d = 0; d < m_disp_range; ++d) {
         float * mcost = m_mcost_l + d * m_image_size;
         float * temp = new float[m_image_size];
@@ -133,8 +129,6 @@ void qing_stereo::aggregate_mcost_vol() {
         memset(mcost, 0, sizeof(float)*m_image_size);
         QingTimer timer;
         qing_approximated_bilateral_filter(mcost, temp, m_bgr_l, m_w, m_h, m_sigma_range, m_sigma_spatial);
-        //qing_bilateral_filter(mcost, temp, m_bgr_l, m_w, m_h, m_sigma_range, m_sigma_spatial);
-
         cout << "d = " << d << ", duration = " << timer.duration()*1000 << " ms" << endl;
 # if 0
         qing_create_dir("matching-cost");
@@ -144,17 +138,157 @@ void qing_stereo::aggregate_mcost_vol() {
     }
 }
 
+//delta_d = x_direct * delta_x + y_direct * delta_y
+//filter along different direction then how to choose: choose the minimum in all direction
+//method-1: need n cost volume, n = direction, x-direction first then y-direction
+//method-2: direction in weight;
+
+//void qing_stereo::directional_aggregate_mcost_vol() {
+//    cout << "directional_aggregate_mcost_vol.." << endl;
+
+//    m_filtered_mcost_l = new float[m_image_size * m_disp_range];
+//    if(m_filtered_mcost_l == 0) {
+//        cerr << "failed to new memory.." << endl;
+//        exit(-1);
+//    }
+
+//    float cita[3] = {0, 30, 45};
+
+//    for(int d = 0; d < m_disp_range; ++d) {
+//        float * mcost = m_mcost_l + d * m_image_size;
+//        float * filtered_mcost = m_filtered_mcost_l + d * m_image_size;  //saving final out
+//        memset(filtered_mcost, 10000, sizeof(float)*m_image_size );
+
+//        float * in = new float[m_image_size];
+//        float * out = new float[m_image_size];
+
+//        for(int k = 0; k < 3; ++k) {
+//            memcpy(in, mcost, sizeof(float)*m_image_size);
+//            memset(out, 0, sizeof(float)*m_image_size);
+//            QingTimer timer;
+//            qing_approximate_directional_bilateral_filter(out, in, m_bgr_l, m_w, m_h, m_sigma_range, m_sigma_spatial, cita[k]);
+//            cout << "d = " << d << ", duration = " << timer.duration()*1000 << " ms" << endl;
+
+//            for(int i = 0; i < m_image_size; ++i) {
+//                if(out[i] < filtered_mcost[i]) filtered_mcost[i] = out[i];
+//            }
+//        }
+//# if 1
+//        qing_create_dir("matching-cost");
+//        string out_jpg_file = "./matching-cost/directional_filtered_mcost_l_" + qing_int_2_string(d) + ".jpg";
+//        qing_save_mcost_jpg(out_jpg_file, mcost, m_w, m_h);
+//# endif
+//    }
+//}
+
+
+//void qing_stereo::directional_aggregate_mcost_vol() {
+//    cout << "directional_aggregate_mcost_vol.." << endl;
+//    cout << "test malloc.." << endl;
+//    int total_size = m_image_size * m_disp_range * 3;
+//    float * test = new float[total_size];
+//    if(0==test) {
+//        cerr << "failed to malloc.." << endl;
+//        exit(-1);
+//    }
+
+//    return ;
+
+//    m_filtered_mcost_l = new float[m_image_size * m_disp_range];
+//    memset(m_filtered_mcost_l, 10000.0, sizeof(m_filtered_mcost_l));
+
+//    int wnd = 2 * (m_sigma_range + 0.5f) + 1;
+//    int offset = wnd * 0.5;
+//    float x_direct[3] = {-0.5, 0, 0.5};
+//    float y_direct[3] = {-0.5, 0, 0.5};
+
+//    //9 directional
+
+//    float * cur_dir_out = new float[m_image_size];
+//    float * temp = new float[m_image_size];
+
+//    for(int i = 0; i < 3; ++i) {
+//        for(int j = 0; j < 3; ++j) {
+//           float x_dir = x_direct[i];
+//           float y_dir = y_direct[j];
+
+//           for(int d = 0; d < m_disp_range; ++d) {
+
+//               float * filtered_mcost = m_filtered_mcost_l + d * m_image_size;
+//               float * mcost = m_mcost_l + d * m_image_size;
+
+//               memcpy(cur_dir_out, mcost, sizeof(float)*m_image_size);
+//               float * in_ = cur_dir_out;     //final cout
+//               float * out_ = temp;
+//               memset(out_, 0, sizeof(float)*m_image_size);
+
+//               //horizontal filtering
+//               for(int y = 0; y < m_h; ++y) {
+//                   int idy = y * m_w;
+//                   for(int x = 0; x < m_w; ++x) {
+//                       int idx = idy + x;
+//                       double sum = 0.0, sum_div = 0.0;
+
+//                       unsigned char * ptr_bgr_c = m_bgr_l + idx - 1;
+//                       unsigned char b_c = *(++ptr_bgr_c);
+//                       unsigned char g_c = *(++ptr_bgr_c);
+//                       unsigned char r_c = *(++ptr_bgr_c);
+
+//                       for(int k = -offset; k <= offset; ++k) {
+//                           if(x+k<0||x+k>=m_w) continue;
+
+//                           int idk = idx + k;
+//                           unsigned char * p_bgr_k =  m_bgr_l + 3 * idk - 1;
+//                           int delta_b = abs(b_c - *(++p_bgr_k));
+//                           int delta_g = abs(g_c - *(++p_bgr_k));
+//                           int delta_r = abs(r_c - *(++p_bgr_k));
+
+//                           double weight = m_range_table[delta_b] * m_range_table[delta_g] * m_range_table[delta_r] * m_spatial_table[abs(k)] ;
+
+//                           int d_k = d + x_dir * k;
+//                           if(d_k < 0 || d_k >= m_disp_range)  { continue; }
+//                           int d_idx = d_k * m_image_size + idk;
+//                           sum += weight * m_mcost_l[d_idx];
+//                           sum_div = weight;
+//                       }
+
+//                       if(sum_div > 0.000001) out_[idx] = sum/sum_div;
+//                   }
+//               }
+
+
+//               //vertical filtering
+//               in_ = temp;
+//               out_ = cur_dir_out;
+
+
+//               //save in filtered mcost
+//               for(int y = 0, idx = 0; y < m_h; ++y) {
+//                   for(int x = 0; x < m_w; ++x) {
+//                       if( cur_dir_out[idx] < filtered_mcost[idx]) {
+//                           filtered_mcost[idx] = cur_dir_out[idx];
+//                        }
+//                       idx++;
+//                   }
+//               }
+//           }
+//        }
+//    }
+
+//}
+
 void qing_stereo::mcost_to_disp(const int scale) {
     m_disp_l = new unsigned char[m_image_size];
     memset(m_disp_l, 0, sizeof(unsigned char)*m_image_size);
     for(int y = 0, idx = 0; y < m_h; ++y) {
         for(int x = 0; x < m_w; ++x) {
 
-            float min_mcost = 65536;
+            float min_mcost = 10000.f;
             int min_d = 0;
 
             for(int d = 1; d < m_disp_range; ++d) {
-                float mcost = *(m_mcost_l + d * m_image_size + idx);
+//                float mcost = *(m_mcost_l + d * m_image_size + idx);
+                float mcost = *(m_filtered_mcost_l + d * m_image_size + idx);
                 if(mcost < min_mcost) {
                     min_mcost = mcost;
                     min_d = d * scale;

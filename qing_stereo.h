@@ -2,9 +2,6 @@
 #define QING_STEREO_H
 
 #include "../../../Qing/qing_common.h"
-//#include "../../../Qing/qing_box_filter.h"
-//#include "../../../Qing/qing_median_filter.h"
-//#include "../../../Qing/qing_guided_filter.h"
 
 class qing_stereo
 {
@@ -26,6 +23,7 @@ public:
     void compute_mcost_vol_l();
     void compute_mcost_vol_r();
     void aggregate_mcost_vol();
+   // void directional_aggregate_mcost_vol();
     void mcost_to_disp(const int scale);
 
     //void appximated_bilateral_filter(float * out, float * in);
