@@ -3,6 +3,8 @@
 
 #include "../../../Qing/qing_common.h"
 
+#define DISP_RIGHT 0
+
 class qing_stereo
 {
 public:
@@ -20,11 +22,16 @@ public:
 
     void set_params(const int disp_range, const float sigma_range, const float sigma_spatial);
     void load_image(const string filename_l, const string filename_r);
+    void malloc();
+    void get_weighted_table();
     void compute_mcost_vol_l();
     void compute_mcost_vol_r();
-    void aggregate_mcost_vol();
-   // void directional_aggregate_mcost_vol();
-    void mcost_to_disp(const int scale);
+
+
+
+    void aggregate_mcost_vol(const int wnd);
+    void directional_aggregate_mcost_vol(const int wnd);
+    void mcost_to_disp(const string file_suffix, const int scale);
 
     //void appximated_bilateral_filter(float * out, float * in);
 
