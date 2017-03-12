@@ -61,8 +61,28 @@ void qing_stereo::load_image(const string filename_l, const string filename_r) {
     memcpy(m_bgr_l, mat_l.data, sizeof(unsigned char) * m_image_size * 3);
     memcpy(m_bgr_r, mat_r.data, sizeof(unsigned char) * m_image_size * 3);
 
-    cout << QING_DEBUG_FLAG_STRING << "\t finish loading images"  << endl;
+    cout << "finish loading images"  << endl;
     cout << m_disp_range << " x " << m_h << " x " << m_w << endl;
+
+    Mat gray_l, gray_r;
+    cvtColor(mat_l, gray_l, CV_BGR2GRAY);
+    cvtColor(mat_r, gray_r, CV_BGR2GRAY);
+    m_gray_l = new unsigned char[m_image_size];
+    m_gray_r = new unsigned char[m_image_size];
+    memcpy(m_gray_l, gray_l.data, sizeof(unsigned char)*m_image_size);
+    memcpy(m_gray_r, gray_r.data, sizeof(unsigned char)*m_image_size);
+    m_census_l = new unsigned char[m_image_size];
+    m_census_r = new unsigned char[m_image_size];
+    qx_census_transform_3x3(m_census_l, m_gray_l, m_h, m_w);
+    qx_census_transform_3x3(m_census_r, m_gray_r, m_h, m_w);
+    cout << "3x3 census transform done.." << endl;
+}
+
+void qing_stereo::get_weighted_table() {
+    m_range_table = qing_get_range_weighted_table(m_sigma_range, QING_FILTER_INTENSITY_RANGE);
+   m_spatial_table = qing_get_spatial_weighted_table(m_sigma_spatial, QING_FILTER_SPATIAL_RANGE);
+
+    cout << QING_DEBUG_FLAG_STRING << "\t finish weighted table computing..." << endl;
 }
 
 void qing_stereo::malloc() {
@@ -99,14 +119,6 @@ void qing_stereo::malloc() {
 # endif
 }
 
-void qing_stereo::get_weighted_table() {
-    m_range_table = qing_get_range_weighted_table(m_sigma_range, QING_FILTER_INTENSITY_RANGE);
-    // m_spatial_table = qing_get_spatial_weighted_table(m_sigma_spatial, 2*(int)(m_sigma_spatial+0.5f)+1);
-    m_spatial_table = qing_get_spatial_weighted_table(m_sigma_spatial, 100);
-
-    cout << QING_DEBUG_FLAG_STRING << "\t finish weighted table computing..." << endl;
-}
-
 // 0 is the invalid matching cost
 void qing_stereo::compute_mcost_vol_l(){
     for(int d = 0; d < m_disp_range; ++d) {
@@ -119,7 +131,7 @@ void qing_stereo::compute_mcost_vol_l(){
             }
         }
     }
-    cout <<  "finish computing raw matching cost vol..." << endl;
+    cout << "finish computing raw matching cost vol..." << endl;
 
 # if 0
     qing_create_dir("matching-cost");
@@ -144,7 +156,7 @@ void qing_stereo::compute_mcost_vol_r(){
             }
         }
     }
-    cout << QING_DEBUG_FLAG_STRING << "\t finish computing raw matching cost vol... in right" << endl;
+    cout << "finish computing raw matching cost vol... in right" << endl;
 
 # if 0
     qing_create_dir("matching-cost");
@@ -154,6 +166,54 @@ void qing_stereo::compute_mcost_vol_r(){
         float * mcost = m_mcost_r + d * m_image_size;
         qing_save_mcost_txt(out_txt_file, mcost, m_image_size, m_w);
         qing_save_mcost_jpg_inf(out_jpg_file, mcost, m_w, m_h);
+    }
+# endif
+}
+
+void qing_stereo::compute_mcost_vol_census_l() {
+
+    for(int d = 0; d < m_disp_range; ++d) {
+        float * mcost = m_mcost_l + d * m_image_size;
+        for(int y = 0, idx = 0; y < m_h; ++y) {
+            for(int x = 0; x < m_w; ++x) {
+                if(x-d>=m_w || x-d<0) mcost[idx] = 0.f;
+                else
+                    mcost[idx] = qx_hamming_distance(m_census_l[idx], m_census_r[idx-d]);
+                idx++;
+            }
+        }
+    }
+    cout << "finish computing census transform matching cost vol..." << endl;
+# if 1
+    qing_create_dir("census-matching-cost");
+    for(int d = 0; d < m_disp_range; ++d) {
+        string out_jpg_file = "./census-matching-cost/census_l_" + qing_int_2_string(d) + ".jpg";
+        float * mcost = m_mcost_l + d * m_image_size;
+        qing_save_mcost_jpg(out_jpg_file,  mcost, m_w, m_h);
+    }
+# endif
+}
+
+void qing_stereo::compute_mcost_vol_census_r() {
+
+    for(int d = 0; d < m_disp_range; ++d) {
+        float * mcost = m_mcost_r + d * m_image_size;
+        for(int y = 0, idx = 0; y < m_h; ++y) {
+            for(int x = 0; x < m_w; ++x) {
+                if(x+d>=m_w || x-d<0) mcost[idx] = 0.f;
+                else
+                    mcost[idx] = qx_hamming_distance(m_census_l[idx+d], m_census_r[idx]);
+                idx++;
+            }
+        }
+    }
+    cout << "finishing computing census transform matching cost vol...in right.." << endl;
+# if 1
+    qing_create_dir("census-matching-cost");
+    for(int d = 0; d < m_disp_range; ++d) {
+        string out_jpg_file = "./census-matching-cost/census_r_" + qing_int_2_string(d) + ".jpg";
+        float * mcost = m_mcost_r + d * m_image_size;
+        qing_save_mcost_jpg(out_jpg_file, mcost, m_w, m_h);
     }
 # endif
 }

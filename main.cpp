@@ -12,7 +12,7 @@ int main(int argc, char * argv[]) {
     const string imagename_r = "teddy_R.png";
 
     int d = 70;
-    float sigma_range = 0.08;
+    float sigma_range = 0.08;        //*255
     float sigma_spatial = 0.03;
     int wnd = 31;
 
@@ -26,8 +26,9 @@ int main(int argc, char * argv[]) {
     stereo.load_image(folder+imagename_l, folder+imagename_r);
     stereo.malloc();
 
-    stereo.compute_mcost_vol_l();
+    //stereo.compute_mcost_vol_l();
     //stereo.aggregate_mcost_vol(wnd);
+    stereo.compute_mcost_vol_census_l();
     stereo.directional_aggregate_mcost_vol(wnd);
     stereo.mcost_to_disp("d_disp_bf_" + imagename_l, 255/d);
     //    stereo.compute_mcost_vol_r();

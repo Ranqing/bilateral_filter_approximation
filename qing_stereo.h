@@ -14,6 +14,9 @@ public:
 public:
     int m_w, m_h, m_disp_range, m_total_size, m_image_size ;
     unsigned char * m_bgr_l, * m_bgr_r;
+    unsigned char * m_gray_l, * m_gray_r;
+    unsigned char * m_census_l, * m_census_r;
+
     float * m_mcost_l, * m_mcost_r;
     float * m_filtered_mcost_l, * m_filtered_mcost_r;
     float * m_range_table, * m_spatial_table;
@@ -27,6 +30,8 @@ public:
     void compute_mcost_vol_l();
     void compute_mcost_vol_r();
 
+    void compute_mcost_vol_census_l();
+    void compute_mcost_vol_census_r();
 
 
     void aggregate_mcost_vol(const int wnd);
