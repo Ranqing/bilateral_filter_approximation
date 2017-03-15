@@ -33,6 +33,7 @@ public:
     void compute_mcost_vol_census_l();
     void compute_mcost_vol_census_r();
 
+    //void semi_global();    //aggregate cost vol in multi-directions
 
     void aggregate_mcost_vol(const int wnd);
     void directional_aggregate_mcost_vol(const int wnd);

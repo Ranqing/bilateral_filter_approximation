@@ -6,6 +6,7 @@
 #include "../../../Qing/qing_bilateral_filter.h"
 #include "../../../Qing/qing_dir.h"
 #include "../../../Qing/qing_timer.h"
+#include "../../../Qing/qing_image.h"
 
 // unsigned char * m_bgr_l, * m_bgr_r;
 //float * m_mcost_l, * m_mcost_r;
@@ -177,8 +178,19 @@ void qing_stereo::compute_mcost_vol_census_l() {
         for(int y = 0, idx = 0; y < m_h; ++y) {
             for(int x = 0; x < m_w; ++x) {
                 if(x-d>=m_w || x-d<0) mcost[idx] = 0.f;
-                else
+                else {
                     mcost[idx] = qx_hamming_distance(m_census_l[idx], m_census_r[idx-d]);
+#if 1
+                    if(y != 0)       {  //y-1
+                        float temp_mcost = qx_hamming_distance(m_census_l[idx], m_census_r[idx-d-m_w]);
+                        if(mcost[idx] > temp_mcost) mcost[idx] = temp_mcost;
+                    }
+                    if(y != m_h - 1) { //y+1
+                        float temp_mcost = qx_hamming_distance(m_census_l[idx], m_census_r[idx-d+m_w]);
+                        if(mcost[idx] > temp_mcost) mcost[idx] = temp_mcost;
+                    }
+#endif
+                }
                 idx++;
             }
         }
