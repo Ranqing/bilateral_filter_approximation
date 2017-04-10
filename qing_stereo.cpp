@@ -81,7 +81,7 @@ void qing_stereo::load_image(const string filename_l, const string filename_r) {
 
 void qing_stereo::get_weighted_table() {
     m_range_table = qing_get_range_weighted_table(m_sigma_range, QING_FILTER_INTENSITY_RANGE);
-   m_spatial_table = qing_get_spatial_weighted_table(m_sigma_spatial, QING_FILTER_SPATIAL_RANGE);
+    m_spatial_table = qing_get_spatial_weighted_table(m_sigma_spatial, QING_FILTER_SPATIAL_RANGE);
 
     cout << QING_DEBUG_FLAG_STRING << "\t finish weighted table computing..." << endl;
 }
@@ -180,7 +180,7 @@ void qing_stereo::compute_mcost_vol_census_l() {
                 if(x-d>=m_w || x-d<0) mcost[idx] = 0.f;
                 else {
                     mcost[idx] = qx_hamming_distance(m_census_l[idx], m_census_r[idx-d]);
-#if 1
+#if RECT_ERROR
                     if(y != 0)       {  //y-1
                         float temp_mcost = qx_hamming_distance(m_census_l[idx], m_census_r[idx-d-m_w]);
                         if(mcost[idx] > temp_mcost) mcost[idx] = temp_mcost;
@@ -370,13 +370,13 @@ void qing_stereo::directional_aggregate_mcost_vol(const int wnd) {
     }
     cout << "horizontal filtering done.." << endl;
 
- # if 1
+# if 1
     Mat x_disp_mat = Mat::zeros(m_h, m_w, CV_8UC1);
     unsigned char * ptr = x_disp_mat.ptr<unsigned char>(0);
     qing_wta_disparity(ptr, min_mcost_x, m_disp_range, m_h, m_w, 255/m_disp_range);
     string file = "../disp_in_x.png";
     imwrite(file, x_disp_mat); cout << "saving " << file << endl;
- # endif
+# endif
 
     cout << "vertical filtering start..." << endl;
     for(int d = 0; d < m_disp_range; ++d) {
@@ -443,11 +443,11 @@ void qing_stereo::directional_aggregate_mcost_vol(const int wnd) {
     cout << "vertical filtering done.." << endl;
 
 # if 1
-   Mat y_disp_mat = Mat::zeros(m_h, m_w, CV_8UC1);
-   ptr = y_disp_mat.ptr<unsigned char>(0);
-   qing_wta_disparity(ptr, m_filtered_mcost_l, m_disp_range, m_h, m_w, 255/m_disp_range);
-   file = "../disp_in_y.png";
-   imwrite(file, y_disp_mat); cout << "saving " << file << endl;
+    Mat y_disp_mat = Mat::zeros(m_h, m_w, CV_8UC1);
+    ptr = y_disp_mat.ptr<unsigned char>(0);
+    qing_wta_disparity(ptr, m_filtered_mcost_l, m_disp_range, m_h, m_w, 255/m_disp_range);
+    file = "../disp_in_y.png";
+    imwrite(file, y_disp_mat); cout << "saving " << file << endl;
 # endif
 }
 

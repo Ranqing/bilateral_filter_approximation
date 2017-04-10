@@ -4,6 +4,7 @@
 #include "../../../Qing/qing_common.h"
 
 #define DISP_RIGHT 0
+#define RECT_ERROR 0
 
 class qing_stereo
 {
